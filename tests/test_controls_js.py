@@ -11,6 +11,7 @@ pytestmark = pytest.mark.skipif(shutil.which("node") is None, reason="node not i
 
 
 def test_controls_js_node_tests_pass():
-    r = subprocess.run(["node", "--test", "tests/js/controls.test.mjs"], cwd=ROOT, capture_output=True, text=True)
+    # LDS edition: ask for the spec reporter, which prints "ℹ pass N" on every Node version; Node 22 prints TAP when piped.
+    r = subprocess.run(["node", "--test", "--test-reporter=spec", "tests/js/controls.test.mjs"], cwd=ROOT, capture_output=True, text=True)
     assert r.returncode == 0, r.stdout[-2000:] + r.stderr[-1000:]
     assert int(re.search(r"ℹ pass (\d+)", r.stdout).group(1)) == 6

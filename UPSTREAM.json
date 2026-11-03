@@ -4,7 +4,7 @@
   "commit": "d5ed74dca029310306f3e654b3df8801537ffbde",
   "author": "Dev Suthar",
   "license": "MIT",
-  "ldsRevision": "1.0.0",
+  "ldsRevision": "1.0.1",
   "distribution": "https://github.com/lets-data-science/neural-snake",
   "ldsLicense": "Apache-2.0"
 }

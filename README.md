@@ -12,7 +12,7 @@ Everything runs on your own computer. There is no API key, account or paid servi
 
 ## Get the project
 
-- [Version 1.0.0 downloads](https://github.com/lets-data-science/neural-snake/releases/tag/v1.0.0): choose the **starter** to build the three exercises yourself or the **reference** to start from the finished project. The release includes SHA-256 checksums.
+- [Version 1.0.1 downloads](https://github.com/lets-data-science/neural-snake/releases/tag/v1.0.1): choose the **starter** to build the three exercises yourself or the **reference** to start from the finished project. The release includes SHA-256 checksums.
 - This repository contains the **completed reference**. Clone it with the commands below, then follow the setup instructions. Keep your starter in a separate folder.
 
 ```bash
