@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Neural Snake: comparison</title>
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<div id="banner" role="note">Comparison page — runs a REAL hand-written Snake engine beside the model, for comparison only. The main game page contains no game rules.</div>
+<header class="top wide">
+  <div class="brand"><h1>Model vs real engine</h1><span class="badge">Comparison only</span></div>
+  <p class="claim">The same keypresses and 150 ms ticks drive both. Arrow keys, the buttons below the boards or a swipe on either board steer; no input means NOOP. The run stops as soon as either side says game over. Red outlines on the model board mark cells where the model's grid differs from the engine's.</p>
+</header>
+<main class="wide">
+  <div class="boards">
+    <figure>
+      <figcaption>Model (neural network, <span id="backend">loading...</span>)</figcaption>
+      <div class="board-wrap"><div class="board-panel"><div class="board-inner">
+        <canvas id="model" width="480" height="480" aria-label="Board produced by the model"></canvas>
+        <div id="orbsModel" class="orbs" aria-hidden="true"></div>
+        <div id="overModel" class="over" role="status"></div>
+      </div></div></div>
+    </figure>
+    <figure>
+      <figcaption>Real engine (hand-written rules, web/engine.js)</figcaption>
+      <div class="board-wrap"><div class="board-panel"><div class="board-inner">
+        <canvas id="engine" width="480" height="480" aria-label="Board produced by the hand-written engine"></canvas>
+        <div id="orbsEngine" class="orbs" aria-hidden="true"></div>
+        <div id="overEngine" class="over" role="status"></div>
+      </div></div></div>
+    </figure>
+  </div>
+  <div id="pad" aria-label="Direction buttons">
+    <button type="button" class="up" data-action="0" aria-label="Up">&#9650;</button>
+    <button type="button" class="left" data-action="2" aria-label="Left">&#9664;</button>
+    <button type="button" class="down" data-action="1" aria-label="Down">&#9660;</button>
+    <button type="button" class="right" data-action="3" aria-label="Right">&#9654;</button>
+  </div>
+  <section class="card">
+    <dl>
+      <dt>Steps this run</dt><dd id="steps">0</dd>
+      <dt>First divergence</dt><dd id="first">none yet</dd>
+      <dt>Mismatched steps so far</dt><dd id="mism">0</dd>
+      <dt>This step</dt><dd id="now">-</dd>
+      <dt>Food sync (comparison aid)</dt><dd>After every eat by the real engine, the model board's food is replaced by the engine's food, so a wrong food guess does not mask later steps. The model's own food guess is never used on this page.</dd>
+      <dt>Game over</dt><dd id="over">-</dd>
+    </dl>
+    <pre id="selftest" hidden></pre>
+    <p><button id="restart" class="primary" type="button">Restart both</button> <a href="./index.html">Back to the game page (model only)</a></p>
+  </section>
+</main>
+<script type="module" src="./compare.js"></script>
+</body>
+</html>
