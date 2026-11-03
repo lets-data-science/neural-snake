@@ -3,7 +3,7 @@
     identical ate > 0.5 and game-over > 0.5 decisions.
  2. 20 closed-loop rollouts x 200 steps: same actions, same sampled food cell (sampled from the PyTorch food probabilities with a seeded RNG and written
     into BOTH grids, never checked for emptiness, exactly like web/main.js), states must stay identical; game over > 0.5 resets to the start state.
-Run: .venv/bin/python scripts/parity_onnx.py -> web/model/parity_results.json
+Run: python scripts/parity_onnx.py -> web/model/parity_results.json
 """
 import json
 import os
@@ -17,7 +17,7 @@ import torch.nn.functional as F
 HERE = os.path.dirname(__file__)
 ROOT = os.path.join(HERE, "..")
 sys.path.insert(0, HERE)
-sys.path.insert(0, os.path.join(ROOT, "spikes", "spike_a"))
+sys.path.insert(0, os.path.join(ROOT, "training"))
 import common  # noqa: E402
 import export_onnx  # noqa: E402
 

@@ -21,7 +21,7 @@ const el = (id) => document.getElementById(id);
 fitCanvas(el('model')); // canvas backing store: 480 px, or 960 px on high-density screens
 fitCanvas(el('engine'));
 const state = { ort: null, session: null, backend: '', reports: [], start: null, modelGrid: null, engine: null, modelOver: false, busy: false, pendingAction: NOOP,
-  steps: 0, firstDivergence: null, mismatched: 0, stopped: false };
+  steps: 0, firstDivergence: null, mismatched: 0, stopped: false, started: false };
 
 // purpose: fetch a JSON file that ships with the page (the engine-generated start state).
 async function loadJSON(url) {
@@ -101,9 +101,9 @@ function render(diff, summary) {
   el('over').textContent = state.steps === 0 ? '-' : 'model: ' + (state.modelOver ? 'game over' : 'running') + ' | engine: ' + (state.engine.gameOver ? 'game over' : 'running');
 }
 
-// purpose: timer callback every 150 ms: apply the pending key (NOOP if none) to the engine and the model, sync food after an engine eat, compare, render.
+// purpose: timer callback every 150 ms: apply the pending key (NOOP if none) to the engine and the model, sync food after an engine eat, compare, render. Waits for the first key.
 async function tick() {
-  if (state.busy || state.stopped || !state.session) return;
+  if (state.busy || state.stopped || !state.started || !state.session) return;
   state.busy = true;
   const action = state.pendingAction;
   state.pendingAction = NOOP;
@@ -128,9 +128,10 @@ async function tick() {
   state.busy = false;
 }
 
-// purpose: remember an action index (0 UP, 1 DOWN, 2 LEFT, 3 RIGHT) for the next tick; both sides get it. Arrow keys, on-screen buttons and swipes all end up here.
+// purpose: remember an action index (0 UP, 1 DOWN, 2 LEFT, 3 RIGHT) for the next tick; both sides get it. Arrow keys, on-screen buttons and swipes all end up here. The first one starts the run.
 function setPending(action) {
   state.pendingAction = action;
+  state.started = true; // LDS edition: wait for the player instead of stepping from page load
 }
 
 // purpose: map an arrow key to an action index for the next tick (both sides get the same key); Space/Enter restarts both.
@@ -139,16 +140,16 @@ function onKey(ev) {
   else if (ev.key === ' ' || ev.key === 'Enter') { ev.preventDefault(); restart(); }
 }
 
-// purpose: reset both sides to the same engine-generated start state and clear the counters.
+// purpose: reset both sides to the same engine-generated start state, clear the counters and wait for a key again.
 function restart() {
   const s = state.start;
   state.modelGrid = Int32Array.from(s.grid.flat());
   state.engine = new Engine({ n: N, body: [s.head], direction: RIGHT, food: s.food });
-  Object.assign(state, { modelOver: false, pendingAction: NOOP, steps: 0, firstDivergence: null, mismatched: 0, stopped: false });
-  render(null, 'start state');
+  Object.assign(state, { modelOver: false, pendingAction: NOOP, steps: 0, firstDivergence: null, mismatched: 0, stopped: false, started: false });
+  render(null, 'start state: press an arrow key, a button or swipe to start');
 }
 
-// purpose: page start-up: load the start state, create the model session, wire the keyboard and button, start the 150 ms timer.
+// purpose: page start-up: load the start state, create the model session, wire the keyboard and button, start the 150 ms timer (it steps only after the first key).
 async function main() {
   state.start = await loadJSON(START_URL);
   restart();
@@ -161,7 +162,7 @@ async function main() {
     renderSelfTestPanel();
     return;
   }
-  render(null, 'start state');
+  render(null, 'start state: press an arrow key, a button or swipe to start');
   renderSelfTestPanel();
   window.addEventListener('keydown', onKey);
   installControls({ buttons: document.querySelectorAll('#pad button'), swipeTargets: [el('model'), el('engine')], onAction: setPending });

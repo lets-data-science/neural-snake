@@ -1,9 +1,9 @@
-"""Final evaluation of the SHIPPED model (web/model/snake.onnx, onnxruntime-python, CPU) following PLAN.md section 13.
+"""Final evaluation of the SHIPPED model (web/model/snake.onnx, onnxruntime-python, CPU).
 
-  .venv/bin/python scripts/eval_heldout.py dryrun                      # VALIDATION rows only (seed % 5 == 1) of data/run1 and data/spike_a
-  .venv/bin/python scripts/eval_heldout.py heldout --confirm-heldout   # held-out rows (seed % 5 == 0); refuses to run twice (eval/heldout.lock)
+  python scripts/eval_heldout.py dryrun [--model M] [--out DIR]   # VALIDATION rows only (seed % 5 == 1) of data/run1 and data/spike_a -> runs/
+  python scripts/eval_heldout.py heldout --confirm-heldout   # held-out rows (seed % 5 == 0); refuses to run twice (eval/heldout.lock)
 
-Outputs: eval/dryrun_<dataset>_validation.json | eval/results_heldout.json + eval/results_heldout.md
+Outputs: runs/dryrun_<dataset>_validation.json (LDS edition; Dev's are in eval/) | eval/results_heldout.json + eval/results_heldout.md
 The held-out code path is unreachable without the sub-command `heldout`, the flag --confirm-heldout and the absence of eval/heldout.lock;
 the lock is created (O_EXCL) BEFORE any held-out row is read. Headline = data/run1 held-out; data/spike_a held-out is reported separately
 and labelled "seen once in Phase 0 by throwaway models".
@@ -24,13 +24,14 @@ import onnxruntime as ort
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, ".."))
 sys.path.insert(0, ROOT)
-sys.path.insert(0, os.path.join(ROOT, "spikes", "spike_a"))
+sys.path.insert(0, os.path.join(ROOT, "training"))
 import common  # noqa: E402
 import gen  # noqa: E402
 from common import TO4  # noqa: E402
+from learner.survival import HORIZONS as KM_HORIZONS, kaplan_meier  # noqa: E402  (LDS build-along exercise 3)
 
 ONNX = os.path.join(ROOT, "web", "model", "snake.onnx")
-CKPT = os.path.join(ROOT, "checkpoints", "run2_best.pt")
+CKPT = os.path.join(ROOT, "models", "run2_best.pt")
 OUT = os.path.join(ROOT, "eval")
 LOCK = os.path.join(OUT, "heldout.lock")
 BUCKETS = [("1-3", 1, 3), ("4-7", 4, 7), ("8-15", 8, 15), ("16+", 16, 999)]
@@ -41,6 +42,8 @@ DYNAMICS_REASONS = ("heads!=1", "wrong_length", "disconnected")
 
 
 def sha256(path):
+    if not os.path.exists(path):  # LDS edition: the trained weights are optional when you evaluate an exported model
+        return None
     h = hashlib.sha256()
     with open(path, "rb") as f:
         for chunk in iter(lambda: f.read(1 << 20), b""):
@@ -50,10 +53,10 @@ def sha256(path):
 
 def provenance():
     try:
-        head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True).stdout.strip()
+        head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True).stdout.strip() or "not a git checkout"
     except Exception:
         head = "unknown"
-    return {"sha256": {"web/model/snake.onnx": sha256(ONNX), "checkpoints/run2_best.pt": sha256(CKPT),
+    return {"sha256": {"web/model/snake.onnx": sha256(ONNX), "models/run2_best.pt": sha256(CKPT),
                        "scripts/eval_heldout.py": sha256(os.path.abspath(__file__))},
             "onnxruntime_py": ort.__version__, "git_head": head, "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
 
@@ -68,10 +71,10 @@ def load_split(dataset, split):
     return out
 
 
-def make_session():
+def make_session(path=None):
     so = ort.SessionOptions()
     so.log_severity_level = 3
-    return ort.InferenceSession(ONNX, sess_options=so, providers=["CPUExecutionProvider"])
+    return ort.InferenceSession(path or ONNX, sess_options=so, providers=["CPUExecutionProvider"])
 
 
 def run_model(sess, grid, action):
@@ -206,33 +209,6 @@ def rollouts(sess, d, x14, kind, n, cap, seed):
     return per
 
 
-KM_HORIZONS = (50, 100, 200, 500, 1000)
-
-
-def kaplan_meier(times, events, horizons=KM_HORIZONS):
-    """Kaplan-Meier estimate of P(no mismatch yet), implemented directly (no libraries).
-    times[i]: step of the first mismatch (event) or the step at which rollout i was censored (engine game over without a mismatch, or the cap).
-    S(t) = product over event times u <= t of (1 - deaths(u) / at_risk(u)), at_risk(u) = number of rollouts with time >= u.
-    Median = first event time where S < 0.5, or None ("not reached") if the curve never drops below 0.5."""
-    event_times = sorted({t for t, e in zip(times, events) if e})
-    curve, s = [], 1.0
-    for u in event_times:
-        at_risk = sum(1 for t in times if t >= u)
-        deaths = sum(1 for t, e in zip(times, events) if e and t == u)
-        s *= 1 - deaths / at_risk
-        curve.append((u, s))
-
-    def surv(h):
-        last = 1.0
-        for u, v in curve:
-            if u > h:
-                break
-            last = v
-        return last
-    return {"S": {str(h): round(surv(h), 4) for h in horizons}, "rollouts_still_observed_at_step": {str(h): sum(1 for t in times if t >= h) for h in horizons},
-            "median_step": next((u for u, v in curve if v < 0.5), None)}
-
-
 def summarise(per, cap):
     pct = lambda v, q: float(np.percentile(v, q))
     mism = [r for r in per if r["first_mismatch"] is not None]
@@ -347,15 +323,20 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("mode", choices=["dryrun", "heldout"])
     ap.add_argument("--confirm-heldout", action="store_true")
+    # LDS edition: evaluate any exported model on validation rows, written to runs/ so Dev's evidence in eval/ stays as it is
+    ap.add_argument("--model", default=ONNX, help="ONNX file to evaluate (default web/model/snake.onnx)")
+    ap.add_argument("--out", default=os.path.join(ROOT, "runs"), help="folder for the dry-run reports (default runs/)")
     args = ap.parse_args()
     os.makedirs(OUT, exist_ok=True)
     prov = provenance()
-    sess = make_session()
     if args.mode == "dryrun":
+        prov["sha256"]["evaluated_model"] = sha256(args.model)
+        sess = make_session(args.model)
+        os.makedirs(args.out, exist_ok=True)
         for ds in ("run1", "spike_a"):
             res = {"mode": "dryrun (VALIDATION rows only)", "provenance": prov, **evaluate_dataset(ds, "validation", sess)}
-            json.dump(res, open(os.path.join(OUT, f"dryrun_{ds}_validation.json"), "w"), indent=1)
-            open(os.path.join(OUT, f"dryrun_{ds}_validation.md"), "w").write("\n".join(md_dataset(f"DRY RUN on VALIDATION rows: data/{ds}", res)))
+            json.dump(res, open(os.path.join(args.out, f"dryrun_{ds}_validation.json"), "w"), indent=1)
+            open(os.path.join(args.out, f"dryrun_{ds}_validation.md"), "w").write("\n".join(md_dataset(f"DRY RUN on VALIDATION rows: data/{ds}", res)))
             print(f"[dryrun {ds}] rows={res['rows']} exact(all)={res['one_step']['exact']['all']['all_steps']['model_exact']} seconds={res['seconds']}", flush=True)
         return 0
     if not args.confirm_heldout:
@@ -366,6 +347,7 @@ def main():
     except FileExistsError:
         print(f"refusing: {LOCK} exists, the held-out evaluation was already started. No second run.")
         return 3
+    sess = make_session()
     with os.fdopen(fd, "w") as f:
         json.dump({"started": prov["utc"], "provenance": prov}, f, indent=1)
     out = {"provenance": prov, "rollout_cap": ROLLOUT_CAP, "note": "held-out evaluated once; no changes to model, script or metrics after this run"}

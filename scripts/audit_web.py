@@ -2,7 +2,7 @@
 (the comment `// purpose: ...` directly above it); a function without a purpose line is a failure.
 (3) fail if index.html, main.js or controls.js reference engine.js (only compare.html / compare.js may use the hand-written engine);
     web/controls.js (touch / swipe / button input) is inventoried too and each of its functions needs a purpose line.
-Run: .venv/bin/python scripts/audit_web.py [web_dir]   (exit code 1 on any violation)
+Run: python scripts/audit_web.py [web_dir]   (exit code 1 on any violation)
 
 Allowed URLs (documented, never fetched by the page):
  - web/vendor/README.md, LICENSE, ThirdPartyNotices.txt: documentation / license text (any URL)

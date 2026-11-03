@@ -1,11 +1,11 @@
-"""Check that every headline number in README.md matches the committed result files.
+"""Check that every headline number in docs/RESULTS.md (Dev Suthar's results write-up) matches the committed result files.
 
 Sources: eval/results_heldout.json (held-out), eval/dryrun_run1_validation.json (validation side of the side-by-side),
-docs/browser_checks.md (fair benchmark table), web/model/export_info.json, spikes/spike_a/results_{v2,v3,run1,run2}.json, diag_run2.json, run1.log.
+docs/browser_checks.md (fair benchmark table), evidence/shipped-model/export_info.json and selftest.json (the shipped model, LDS edition), evidence/development/results_{v2,v3,run1,run2}.json, diag_run2.json, run1.log.
 Two kinds of checks:
-  1. TABLES: the markdown tables built here from the JSON/markdown sources must appear in README.md line for line (verbatim).
+  1. TABLES: the markdown tables built here from the JSON/markdown sources must appear in docs/RESULTS.md line for line (verbatim).
      `--print-tables` prints them so the README can be pasted from the same code instead of typed by hand.
-  2. FACTS: strings for the numbers quoted in prose must appear in README.md; every function in web/main.js must be listed.
+  2. FACTS: strings for the numbers quoted in prose must appear in docs/RESULTS.md; every function in web/main.js must be listed.
 Run: python scripts/check_readme_numbers.py   (exit 1 and a list of problems on any mismatch)
 """
 import json
@@ -121,8 +121,8 @@ def facts(src):
     go = h["one_step"]["game_over"]
     sa_ex = s["one_step"]["exact"]["all"]["all_steps"]
     med = speed_medians(speed_rows(src["browser"]))
-    info = load("web/model/export_info.json")
-    v3 = load("spikes/spike_a/results_v3.json")
+    info = load("evidence/shipped-model/export_info.json")  # LDS edition: the shipped model, even after use_model.py swaps in yours
+    v3 = load("evidence/development/results_v3.json")
     f = [pct(ex["model_exact"]), pct(ex["copy14"], 2), pct(sa_ex["model_exact"]), pct(sa_ex["copy14"], 2),
          f"{h['rows']:,} rows", f"{s['rows']:,} rows",
          f"{v3['params']:,}", f"{info['file_bytes']:,} bytes",
@@ -134,17 +134,17 @@ def facts(src):
          f"longest snake {max(h['rollout_all_200']['longest_snake_engine'], h['rollout_all_200']['longest_snake_model_predicted'])}",
          f"{med['WebGPU']:.2f} ms", f"{med['WASM']:.2f} ms", f"{med['WebGPU'] / med['WASM']:.0f}x"]
     # training story, from the committed result files
-    f.append(pct(load("spikes/spike_a/results_v2.json")["R1v2"]["val"]["exact"]["all"]["model_exact"], 1))
+    f.append(pct(load("evidence/development/results_v2.json")["R1v2"]["val"]["exact"]["all"]["model_exact"], 1))
     f.append(pct(v3["val"]["exact"]["all"]["all_steps"]["model_exact"], 1))
-    f.append(pct(load("spikes/spike_a/results_run1.json")["val"]["exact"]["all"]["all_steps"]["model_exact"], 1))
-    f.append(pct(load("spikes/spike_a/results_run2.json")["val"]["exact"]["all"]["all_steps"]["model_exact"], 2))
-    run1_log = open(os.path.join(ROOT, "spikes/spike_a/run1.log"), encoding="utf-8").read()
+    f.append(pct(load("evidence/development/results_run1.json")["val"]["exact"]["all"]["all_steps"]["model_exact"], 1))
+    f.append(pct(load("evidence/development/results_run2.json")["val"]["exact"]["all"]["all_steps"]["model_exact"], 2))
+    run1_log = open(os.path.join(ROOT, "evidence/development/run1.log"), encoding="utf-8").read()
     m = re.search(r"t=300s .*?'overall': ([0-9.]+)", run1_log)
     f.append(pct(float(m.group(1)), 2))
-    f.append(f"{load('spikes/spike_a/diag_run2.json')['food_uniform_floor_mean_ln_empty']:.2f}")
-    f.append(f"{round(load('spikes/spike_a/results_run2.json')['seconds']):,} s")
-    f.append(f"{len(load('web/model/selftest.json')['cases'])} recorded cases")  # the self-test case count quoted in the README
-    p0 = load("spikes/spike_a/results.json")  # Phase 0 (two throwaway models, data/spike_a held-out rows)
+    f.append(f"{load('evidence/development/diag_run2.json')['food_uniform_floor_mean_ln_empty']:.2f}")
+    f.append(f"{round(load('evidence/development/results_run2.json')['seconds']):,} s")
+    f.append(f"{len(load('evidence/shipped-model/selftest.json')['cases'])} recorded cases")  # the self-test case count quoted in the README
+    p0 = load("evidence/development/results.json")  # Phase 0 (two throwaway models, data/spike_a held-out rows)
     f += [pct(p0["R1"]["one_step"]["all"]["model_grid_exact"], 1), pct(p0["R2"]["one_step"]["all"]["model_grid_exact"], 1),
           pct(p0["R1"]["one_step"]["all"]["model_full_state_exact(grid+order+dir)"], 1)]
     f.append(f"{h['one_step']['food_head']['spawn_on_snake_pct']:.2f}%")  # one-step share of sampled spawns on the snake
@@ -192,7 +192,7 @@ def main():
             print("\n".join(lines))
             print()
         return 0
-    problems = check(open(os.path.join(ROOT, "README.md"), encoding="utf-8").read(), src)
+    problems = check(open(os.path.join(ROOT, "docs", "RESULTS.md"), encoding="utf-8").read(), src)
     for p in problems:
         print("PROBLEM:", p)
     print("README numbers: " + ("ALL MATCH" if not problems else f"{len(problems)} PROBLEM(S)"))

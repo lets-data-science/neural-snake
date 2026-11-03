@@ -1,16 +1,24 @@
-.venv/
+# Your Python environment, caches and backups
+.venv
 .cache/
 __pycache__/
 .pytest_cache/
-node_modules/
-data/
-checkpoints/
-runs/
-spikes/out/
+.backups
+node_modules
+
+# Generated data, your trained weights and your run reports (regenerate them with the commands in README.md)
+/data
+/models
+/runs
 *.npy
 *.npz
 *.pt
+
+# The six onnxruntime-web files that `npm run setup` copies into web/vendor/
+web/vendor/*.mjs
+web/vendor/*.wasm
+
+# Screen recordings
 *.mov
 *.mp4
-drafts/
 .DS_Store

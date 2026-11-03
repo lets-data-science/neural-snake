@@ -1,1 +1,13 @@
-{"name":"neural-snake","private":true,"dependencies":{"onnxruntime-web":"1.31.1"}}
+{
+  "name": "neural-snake",
+  "version": "1.0.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "scripts": {
+    "setup": "node scripts/setup_web.mjs",
+    "test": "node --test tests/js/engine_golden.test.mjs tests/js/controls.test.mjs tests/js/selftest.test.mjs tests/js/render.test.mjs"
+  },
+  "dependencies": {
+    "onnxruntime-web": "1.31.1"
+  }
+}

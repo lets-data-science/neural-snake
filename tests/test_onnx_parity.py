@@ -1,22 +1,26 @@
-"""PyTorch vs onnxruntime parity for web/model/snake.onnx. Skips if the git-ignored checkpoint/data or the ONNX file is missing.
-Validation rows only (seed % 5 == 1); held-out rows are never loaded."""
+"""PyTorch vs onnxruntime parity: models/run2_best.pt against a fresh ONNX export of that same checkpoint.
+LDS edition: the export is made here, in a temporary folder, so the test checks your model whichever model web/model/ holds.
+Skips if the git-ignored checkpoint or data is missing. Validation rows only (seed % 5 == 1); held-out rows are never loaded."""
 import os
+import subprocess
 import sys
 
 import pytest
 
 ROOT = os.path.join(os.path.dirname(__file__), "..")
 sys.path.insert(0, os.path.join(ROOT, "scripts"))
-needed = [os.path.join(ROOT, p) for p in ("checkpoints/run2_best.pt", "web/model/snake.onnx", "web/model/start_state.json", "data/spike_a/act.npy")]
-pytestmark = pytest.mark.skipif(not all(os.path.exists(p) for p in needed), reason="checkpoint/onnx/data missing (git-ignored or not built)")
+needed = [os.path.join(ROOT, p) for p in ("models/run2_best.pt", "web/model/start_state.json", "data/spike_a/act.npy")]
+pytestmark = pytest.mark.skipif(not all(os.path.exists(p) for p in needed), reason="checkpoint or data missing (train a model first)")
 
 
 @pytest.fixture(scope="module")
-def setup():
+def setup(tmp_path_factory):
     import onnxruntime as ort
     import export_onnx
     import parity_onnx
-    return parity_onnx, export_onnx.load_net(), ort.InferenceSession(parity_onnx.ONNX, providers=["CPUExecutionProvider"])
+    onnx_path = str(tmp_path_factory.mktemp("export") / "parity.onnx")
+    subprocess.run([sys.executable, os.path.join(ROOT, "scripts", "export_onnx.py"), "--out", onnx_path], check=True, capture_output=True)
+    return parity_onnx, export_onnx.load_net(), ort.InferenceSession(onnx_path, providers=["CPUExecutionProvider"])
 
 
 def test_validation_rows_identical_grid_and_decisions(setup):

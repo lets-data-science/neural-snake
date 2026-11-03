@@ -5,7 +5,7 @@ import sys
 import pytest
 
 torch = pytest.importorskip("torch")
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "spikes", "spike_a"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "training"))
 import v3  # noqa: E402
 
 TRUNK = ("stem", "convs", "g1", "g2", "ate_mlp", "inj", "cls_head", "over_head")

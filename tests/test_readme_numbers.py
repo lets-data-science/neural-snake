@@ -1,4 +1,4 @@
-"""README.md numbers must match the committed result files (scripts/check_readme_numbers.py), and the check must be able to fail."""
+"""docs/RESULTS.md numbers must match the committed result files (scripts/check_readme_numbers.py), and the check must be able to fail."""
 import os
 import sys
 
@@ -8,7 +8,7 @@ ROOT = os.path.join(os.path.dirname(__file__), "..")
 sys.path.insert(0, os.path.join(ROOT, "scripts"))
 import check_readme_numbers as crn  # noqa: E402
 
-README = open(os.path.join(ROOT, "README.md"), encoding="utf-8").read()
+README = open(os.path.join(ROOT, "docs", "RESULTS.md"), encoding="utf-8").read()
 
 
 def test_readme_matches_result_files():

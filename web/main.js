@@ -21,7 +21,7 @@ const el = (id) => document.getElementById(id);
 const canvas = el('board');
 const ctx = canvas.getContext('2d');
 const boardPx = fitCanvas(canvas); // canvas backing store: 480 px, or 960 px on high-density screens
-const state = { ort: null, session: null, backend: null, note: '', reports: [], grid: null, start: null, over: false, busy: false, pendingAction: NOOP, steps: 0, times: [] };
+const state = { ort: null, session: null, backend: null, note: '', reports: [], grid: null, start: null, over: false, started: false, busy: false, pendingAction: NOOP, steps: 0, times: [] };
 
 // purpose: fetch a JSON file that ships with the page (the engine-generated start state).
 async function loadJSON(url) {
@@ -72,14 +72,15 @@ function draw() {
   placeOrbs(el('orbs'), state.grid);
 }
 
-// purpose: show the backend, median step time, step count, the model's last ate / game-over probabilities and the game-over banner.
+// purpose: show the backend, median step time, step count, the model's last ate / game-over probabilities and the banner (press a key to start, or game over).
 function renderStatus(probs) {
   const sorted = [...state.times].sort((a, b) => a - b);
   el('backend').textContent = state.backend ? state.backend + (state.note ? ' (' + state.note + ')' : '') : 'loading model...';
   el('ms').textContent = sorted.length ? sorted[Math.floor(sorted.length / 2)].toFixed(2) + ' (n=' + sorted.length + ')' : '-';
   el('steps').textContent = String(state.steps);
   if (probs) el('probs').textContent = 'p(ate)=' + probs.ate.toFixed(3) + '  p(game over)=' + probs.over.toFixed(3);
-  el('banner').textContent = state.over ? 'Game over (the model says so). Press Space or Restart.' : '';
+  el('banner').textContent = state.over ? 'Game over (the model says so). Press Space or Restart.'
+    : state.session && !state.started ? 'Press an arrow key, a button or swipe to start.' : '';
 }
 
 // purpose: draw one cell index from the model's food probabilities with Math.random (inverse CDF). Nothing is checked or resampled.
@@ -106,9 +107,9 @@ async function step(action) {
   return { ate, over };
 }
 
-// purpose: timer callback every 150 ms: consume the pending key (NOOP if none), run one model step, redraw. Skips when a step is still running or the game is over.
+// purpose: timer callback every 150 ms: consume the pending key (NOOP if none), run one model step, redraw. Skips before the first key, while a step is still running and after game over.
 async function tick() {
-  if (state.busy || state.over || !state.session) return;
+  if (state.busy || state.over || !state.started || !state.session) return;
   state.busy = true;
   const action = state.pendingAction;
   state.pendingAction = NOOP;
@@ -123,9 +124,10 @@ async function tick() {
   state.busy = false;
 }
 
-// purpose: remember an action index (0 UP, 1 DOWN, 2 LEFT, 3 RIGHT) for the next tick; the one place where arrow keys, on-screen buttons and swipes all end up.
+// purpose: remember an action index (0 UP, 1 DOWN, 2 LEFT, 3 RIGHT) for the next tick; the one place where arrow keys, on-screen buttons and swipes all end up. The first one starts the game.
 function setPending(action) {
   state.pendingAction = action;
+  state.started = true; // LDS edition: wait for the player instead of stepping from page load
 }
 
 // purpose: map an arrow key to an action index and remember it for the next tick; Space/Enter restarts.
@@ -134,17 +136,18 @@ function onKey(ev) {
   else if (ev.key === ' ' || ev.key === 'Enter') { ev.preventDefault(); restart(); }
 }
 
-// purpose: restart = reload the engine-generated start state from the data file and clear the game-over flag.
+// purpose: restart = reload the engine-generated start state from the data file, clear the game-over flag and wait for a key again.
 function restart() {
   state.grid = Int32Array.from(state.start.grid.flat());
   state.over = false;
+  state.started = false;
   state.pendingAction = NOOP;
   state.steps = 0;
   draw();
   renderStatus(null);
 }
 
-// purpose: page start-up: load the start state, create the session (WebGPU first), wire the keyboard, touch controls and restart button, start the 150 ms timer.
+// purpose: page start-up: load the start state, create the session (WebGPU first), wire the keyboard, touch controls and restart button, start the 150 ms timer (it steps only after the first key).
 async function main() {
   state.start = await loadJSON(START_URL);
   restart();

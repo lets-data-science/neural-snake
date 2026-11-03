@@ -1,7 +1,7 @@
 """Write 50 Python-engine golden traces to tests/golden/traces.json for the JS engine port (web/engine.js).
 Each trace: n, seed, policy, initial state, actions, food spawn positions (one per eat, in order; null = board full) and the state after EVERY step:
 grid14 as a string of base-16 digits (14 classes -> '0'..'d'), plus direction, food, game_over, won, score, eaten.
-Run: .venv/bin/python scripts/make_golden_traces.py
+Run: python scripts/make_golden_traces.py
 Coverage: 40 traces on the real 12x12 board with the 5 Spike A policies (random, greedy, bfs, bfs_eps20, greedy_eps30), 5 reversal/NOOP-heavy random traces,
 3 traces on a 5x5 board, and 2 traces on tiny boards that end in a WIN (board full, food=None) if such seeds are found.
 """
@@ -13,7 +13,7 @@ from collections import deque
 
 ROOT = os.path.join(os.path.dirname(__file__), "..")
 sys.path.insert(0, ROOT)
-sys.path.insert(0, os.path.join(ROOT, "spikes", "spike_a"))
+sys.path.insert(0, os.path.join(ROOT, "training"))
 from engine.snake import Snake, DELTA, OPPOSITE, UP, DOWN, LEFT, RIGHT, NOOP  # noqa: E402
 import common  # noqa: E402
 import gen  # noqa: E402
@@ -121,7 +121,7 @@ def main():
     while len(traces) < 50:
         traces.append(run(9000 + k, 4, "bfs_generic", max_steps=60))
         k += 1
-    for t in traces:  # the generalised grid14 above must equal spikes/spike_a/common.py grid14 on the 12x12 board
+    for t in traces:  # the generalised grid14 above must equal training/common.py grid14 on the 12x12 board
         if t["n"] == 12:
             s = Snake(seed=t["seed"])
             assert t["initial"]["grid14"] == encode(common.grid14(s.body, s.direction, s.food).tolist()), t["seed"]

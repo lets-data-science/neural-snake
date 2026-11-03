@@ -1,6 +1,6 @@
-# Browser checks (manual, by Dev)
+# Browser checks (manual, by Dev Suthar)
 
-Results reported by Dev from running the pages in Chrome. They are recorded as given; the assistant did not run a browser. Chrome version and GPU were not provided.
+These checks were run by hand in a browser and recorded here. The first section does not record the Chrome version or the GPU.
 
 Model file for these checks: `web/model/snake.onnx` as exported BEFORE the Cast fix (397,175 bytes, final `Cast(int64 -> int32)` node after `ArgMax`). Server: `python3 -m http.server 8000 --bind 127.0.0.1 --directory web`.
 
@@ -18,7 +18,7 @@ Notes:
 
 ## After Cast fix
 
-Re-check by Dev after the fix, with the new 396,375-byte model. Browser: Chrome 156.0.8078.76, arm64, Apple M2.
+Re-checked by hand after the fix, with the new 396,375-byte model. Browser: Chrome 156.0.8078.76, arm64, Apple M2.
 
 | Page | Backend | What was seen |
 |---|---|---|
@@ -34,7 +34,7 @@ Findings:
 
 ## Fair benchmark (bench/bench_model.html), 3 runs
 
-Reported by Dev. Chrome 156.0.8078.76, Apple M2, model `web/model/snake.onnx` sha256 `baf94b18…` (the full hash of the shipped file is `baf94b18913641846a448ced2c298c9ce707869d24aed1eefbb4b4bf474fd740`; the page prints the hash it measured). Two separate sessions per run (`['webgpu']` only, `['wasm']` only), 50 warm-up steps excluded, 500 timed closed-loop steps each. Times are ms per step; "create" is the session-create time in ms.
+Run by hand. Chrome 156.0.8078.76, Apple M2, model `web/model/snake.onnx` sha256 `baf94b18…` (the full hash of the shipped file is `baf94b18913641846a448ced2c298c9ce707869d24aed1eefbb4b4bf474fd740`; the page prints the hash it measured). Two separate sessions per run (`['webgpu']` only, `['wasm']` only), 50 warm-up steps excluded, 500 timed closed-loop steps each. Times are ms per step; "create" is the session-create time in ms.
 
 | Run | Order | Backend | Median | p95 | Create |
 |---|---|---|---|---|---|
@@ -54,7 +54,7 @@ Caveats:
 - Session-create times are dominated by the first run's cold start (424.1 ms) and vary a lot between runs.
 - This benchmark is more reliable than the in-page medians above (9.10 ms WebGPU and 3.20 ms WASM), which include the first steps after page load.
 
-## Real device: Samsung S20+ 5G (Android), reported by Dev on 2026-10-31
+## Real device: Samsung S20+ 5G (Android), checked on 2026-10-31
 
 Model: the shipped `snake.onnx` (sha256 `baf94b18…`), page as deployed before the runtime self-test existed.
 
@@ -63,13 +63,13 @@ Model: the shipped `snake.onnx` (sha256 `baf94b18…`), page as deployed before 
 | Chrome | default page, backend "webgpu" | frames wrong within 6 steps: 6 food cells, head separated from body, model game over at step 6; 33.7 and 38.5 ms/step |
 | Brave | default page, backend "webgpu" | the identical wrong frames |
 | Brave | `?backend=wasm` | correct: a normal snake, one food, an 81-step game; 4.40 ms/step |
-| Chrome | `?backend=wasm` | explicit retest not reported; the default page in Chrome now falls back to WASM and plays correctly (next section) |
+| Chrome | `?backend=wasm` | not retested separately; the default page in Chrome now falls back to WASM and plays correctly (next section) |
 
-Reading: the same `snake.onnx` is exact on desktop WebGPU and WASM and in Python (`web/model/parity_results.json`; held-out evaluation), and the phone's WASM run is correct, so this device's WebGPU path returned wrong numbers. It is not specific to one browser (Chrome and Brave agree). The cause is not determined; the GPU details from `chrome://gpu` have not been supplied, so no GPU is named here. The page now runs 8 recorded golden cases after creating each session and falls back to WASM if WebGPU fails them (`web/selftest.js`); the next section records the result on the phone.
+Reading: the same `snake.onnx` is exact on desktop WebGPU and WASM and in Python (`web/model/parity_results.json`; held-out evaluation), and the phone's WASM run is correct, so this device's WebGPU path returned wrong numbers. It is not specific to one browser (Chrome and Brave agree). The cause is not determined, and no GPU is named here. The page now runs 8 recorded golden cases after creating each session and falls back to WASM if WebGPU fails them (`web/selftest.js`); the next section records the result on the phone.
 
 ### After the runtime self-test: Samsung S20+ 5G, 2026-10-31
 
-Reported by Dev. `chrome://gpu` as supplied: Chrome 156.0.8078.75, Android 13 (TP1A.220624.014), WebGPU: Hardware accelerated, Vulkan: Disabled. The GPU itself is not named here. Whether "Vulkan: Disabled" has anything to do with the wrong numbers is **unconfirmed**; it is recorded because it was in the report.
+`chrome://gpu` on the phone: Chrome 156.0.8078.75, Android 13 (TP1A.220624.014), WebGPU: Hardware accelerated, Vulkan: Disabled. The GPU itself is not named here. Whether "Vulkan: Disabled" has anything to do with the wrong numbers is **unconfirmed**; it is recorded because the page showed it.
 
 `?selftest=1` in Chrome (Incognito): **webgpu FAIL, 0 of 8 cases passed; wasm PASS, 8 of 8.**
 
@@ -93,7 +93,7 @@ So on this phone, WebGPU returned numerically wrong outputs (probability errors 
 
 ## Live site, desktop check (2026-10-31)
 
-Reported by Dev. Chrome 156 on the Apple M2 Mac, https://devsutharsystems.github.io/neural-snake/ (the deployed pages, after the runtime self-test was added).
+Run by hand. Chrome 156 on the Apple M2 Mac, https://devsutharsystems.github.io/neural-snake/ (the deployed pages, after the runtime self-test was added).
 
 | Page | Label shown | In-page median | Game |
 |---|---|---|---|

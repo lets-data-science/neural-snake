@@ -54,7 +54,7 @@ export class Engine {
   }
 
   // 14-class grid, row-major Int32Array(n*n): 0 empty, 1 food, 2-5 head (direction of travel U,D,L,R), 6-9 body, 10-13 tail
-  // (body/tail class = 6 or 10 + direction from that segment to the next segment toward the head). Port of spikes/spike_a/common.py grid14.
+  // (body/tail class = 6 or 10 + direction from that segment to the next segment toward the head). Port of training/common.py grid14.
   grid14() {
     const n = this.n, g = new Int32Array(n * n);
     if (this.food) g[this.food[0] * n + this.food[1]] = 1;

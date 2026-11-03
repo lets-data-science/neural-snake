@@ -1,10 +1,11 @@
-# web/vendor: onnxruntime-web 1.31.1 (vendored, no CDN)
+# web/vendor: onnxruntime-web 1.31.1 (served from this folder, no CDN)
 
 Version: **onnxruntime-web 1.31.1** (MIT). Nothing here is modified.
 
 ## The 6 runtime files
-Copied byte-for-byte from the npm package `onnxruntime-web@1.31.1` (`node_modules/onnxruntime-web/dist/`, pinned in `package.json` / `package-lock.json`;
-`cmp` against `dist/` reported all six identical on 2026-10-31):
+They are not stored in this download (about 44 MB). `npm ci` installs the npm package `onnxruntime-web@1.31.1`
+(pinned in `package.json` / `package-lock.json`), and `npm run setup` (`scripts/setup_web.mjs`) copies these six files
+from `node_modules/onnxruntime-web/dist/` into this folder byte for byte and stops if any SHA-256 differs from this table:
 
 | File | sha256 |
 |---|---|

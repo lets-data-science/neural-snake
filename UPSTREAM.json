@@ -1,0 +1,10 @@
+{
+  "repository": "https://github.com/devsutharsystems/neural-snake",
+  "release": "v1.1.1",
+  "commit": "d5ed74dca029310306f3e654b3df8801537ffbde",
+  "author": "Dev Suthar",
+  "license": "MIT",
+  "ldsRevision": "1.0.0",
+  "distribution": "https://github.com/lets-data-science/neural-snake",
+  "ldsLicense": "Apache-2.0"
+}

@@ -1,5 +1,5 @@
 """Compare the vendored onnxruntime-web WASM backend (run in Node, scripts/ort_wasm_node.mjs) with onnxruntime-python on the start state, 5 actions.
-This is NOT a browser result and says nothing about WebGPU. Run: .venv/bin/python scripts/check_wasm_node.py -> web/model/wasm_node_check.json"""
+This is NOT a browser result and says nothing about WebGPU. Run: python scripts/check_wasm_node.py -> web/model/wasm_node_check.json"""
 import json
 import os
 import subprocess

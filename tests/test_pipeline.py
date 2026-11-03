@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 
 HERE = os.path.dirname(__file__)
-sys.path.insert(0, os.path.join(HERE, "..", "spikes", "spike_a"))
+sys.path.insert(0, os.path.join(HERE, "..", "training"))
 import common  # noqa: E402
 
 pytestmark = pytest.mark.skipif(not os.path.exists(os.path.join(common.DATA, "act.npy")), reason="data/spike_a missing")

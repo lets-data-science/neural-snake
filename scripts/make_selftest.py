@@ -5,7 +5,7 @@ the argmax next grid, the ate / game-over probabilities and decisions (threshold
 The page re-runs the cases on every backend it creates and compares: a backend whose outputs differ is discarded (web/selftest.js).
 This compares the model with its own recorded outputs; it contains no game rules. The grids come from the Python engine only to get realistic inputs.
 The file records the sha256 of snake.onnx; tests fail if the model is re-exported without regenerating this file.
-Run: .venv/bin/python scripts/make_selftest.py
+Run: python scripts/make_selftest.py
 """
 import hashlib
 import json
@@ -18,7 +18,7 @@ import onnxruntime as ort
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, ROOT)
-sys.path.insert(0, os.path.join(ROOT, "spikes", "spike_a"))
+sys.path.insert(0, os.path.join(ROOT, "training"))
 from engine.snake import Snake, DELTA, UP, DOWN, LEFT, RIGHT, NOOP, N  # noqa: E402
 import common  # noqa: E402
 import gen  # noqa: E402
